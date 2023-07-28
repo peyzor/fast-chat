@@ -1,16 +1,26 @@
 import json
+from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
-
-@app.get("/ping")
-def ping():
-    return {"msg": "pong"}
-
+app.mount('/client', StaticFiles(directory='client'), name='client')
 
 rooms = []
+
+
+@app.get('/ping')
+def ping():
+    return {'msg': 'pong'}
+
+
+@app.get('/')
+def home():
+    path = Path('client/index.html')
+    return FileResponse(path, media_type='text/html')
 
 
 async def broadcast_to_room(message: str, sender_room):
@@ -35,8 +45,8 @@ def remove_room(room):
 @app.websocket('/ws/{client_id}')
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     room = {
-        "client_id": client_id,
-        "socket": websocket
+        'client_id': client_id,
+        'socket': websocket
     }
     try:
         await websocket.accept()
